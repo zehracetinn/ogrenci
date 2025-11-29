@@ -1,0 +1,27 @@
+@model ProjeOgrenciYonetim.Web.Models.Student
+
+<h2>Öğrenci Kayıt</h2>
+
+<form method="post">
+    <label>Ad Soyad</label>
+    <input name="FullName" class="form-control" />
+
+    <label>Okul Numarası</label>
+    <input name="StudentNumber" class="form-control" />
+
+    <label>Email</label>
+    <input name="Email" class="form-control" />
+
+    <label>Şifre</label>
+    <input name="Password" type="password" class="form-control" />
+
+    <label>Bildiğiniz Teknolojiler</label>
+    <input name="KnownTechnologies" class="form-control" />
+
+    <button class="btn btn-primary mt-3">Kaydol</button>
+
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-success mt-3">@ViewBag.Message</div>
+    }
+</form>

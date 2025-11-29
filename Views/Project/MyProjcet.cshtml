@@ -1,0 +1,24 @@
+@model List<ProjeOgrenciYonetim.Web.Models.ProjectApplication>
+
+<h2>Başvurduğum Projeler</h2>
+
+<table class="table table-bordered">
+    <thead>
+    <tr>
+        <th>Proje</th>
+        <th>Açıklama</th>
+        <th>Tarih</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @foreach (var a in Model)
+    {
+        <tr>
+            <td>@a.Project.Name</td>
+            <td>@a.Project.Description</td>
+            <td>@a.AppliedAt.ToShortDateString()</td>
+        </tr>
+    }
+    </tbody>
+</table>

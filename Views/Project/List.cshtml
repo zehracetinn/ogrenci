@@ -1,0 +1,40 @@
+@model List<ProjeOgrenciYonetim.Web.Models.Project>
+
+<h2>Projeler</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Adı</th>
+            <th>Süre</th>
+            <th>Teknolojiler</th>
+            <th>Başvur</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.Name</td>
+                <td>@p.DurationWeeks hafta</td>
+                <td>@p.Technologies</td>
+                <td>
+                    <form method="post" asp-action="Apply" asp-route-projectId="@p.Id">
+                        <button class="btn btn-primary">Başvur</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

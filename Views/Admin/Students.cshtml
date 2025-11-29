@@ -1,0 +1,60 @@
+@model List<ProjeOgrenciYonetim.Web.Models.Student>
+
+<h2>Öğrenci Yönetimi</h2>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Ad Soyad</th>
+            <th>Okul No</th>
+            <th>Email</th>
+            <th>Teknolojiler</th>
+            <th>Durum</th>
+            <th>İşlem</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td>@(s.FullName ?? "-")</td>
+                <td>@(s.StudentNumber ?? "-")</td>
+                <td>@(s.Email ?? "-")</td>
+                <td>@(s.KnownTechnologies ?? "-")</td>
+
+                <td>
+                    @if (s.Status == ProjeOgrenciYonetim.Web.Models.StudentStatus.Pending)
+                    {
+                        <span class="badge bg-warning">Bekliyor</span>
+                    }
+                    else if (s.Status == ProjeOgrenciYonetim.Web.Models.StudentStatus.Approved)
+                    {
+                        <span class="badge bg-success">Onaylı</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Reddedildi</span>
+                    }
+                </td>
+
+                <td>
+                    @if (s.Status == ProjeOgrenciYonetim.Web.Models.StudentStatus.Pending)
+                    {
+                        <form method="post" asp-action="Approve" asp-route-id="@s.Id" style="display:inline">
+                            <button class="btn btn-success btn-sm">Onayla</button>
+                        </form>
+
+                        <form method="post" asp-action="Reject" asp-route-id="@s.Id" style="display:inline">
+                            <button class="btn btn-danger btn-sm">Reddet</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

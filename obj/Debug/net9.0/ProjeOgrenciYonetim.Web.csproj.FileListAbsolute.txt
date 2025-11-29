@@ -1,0 +1,9 @@
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/ProjeOgrenciYonetim.Web.csproj.AssemblyReference.cache
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/rpswa.dswa.cache.json
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/ProjeOgrenciYonetim.Web.GeneratedMSBuildEditorConfig.editorconfig
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/ProjeOgrenciYonetim.Web.AssemblyInfoInputs.cache
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/ProjeOgrenciYonetim.Web.AssemblyInfo.cs
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/ProjeOgrenciYonetim.Web.csproj.CoreCompileInputs.cache
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/ProjeOgrenciYonetim.Web.MvcApplicationPartsAssemblyInfo.cache
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/ProjeOgrenciYonetim.Web.RazorAssemblyInfo.cache
+/Users/USER/Desktop/ProjeOgrenciYonetim/ProjeOgrenciYonetim.Web/obj/Debug/net9.0/ProjeOgrenciYonetim.Web.RazorAssemblyInfo.cs

@@ -1,0 +1,19 @@
+@model ProjeOgrenciYonetim.Web.Models.Project
+
+<h2>Yeni Proje Ekle</h2>
+
+<form method="post">
+    <label>Proje Adı:</label>
+    <input class="form-control" name="Name" />
+
+    <label>Açıklama:</label>
+    <textarea class="form-control" name="Description"></textarea>
+
+    <label>Süre (Hafta):</label>
+    <input class="form-control" name="DurationWeeks" type="number" />
+
+    <label>Teknolojiler:</label>
+    <input class="form-control" name="Technologies" />
+
+    <button class="btn btn-success mt-3">Kaydet</button>
+</form>
