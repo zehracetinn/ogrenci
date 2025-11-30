@@ -4,44 +4,42 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ProjeOgrenciYonetim.Web.Services;
-
-
+using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --------------------------
-// Redis Cache (Aynı kalıyor)
-// --------------------------
+// Redis
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = "localhost:6379";  
+    options.Configuration = "localhost:6379";
     options.InstanceName = "OgrenciYonetim_";
 });
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<CacheService>();
 
-// --------------------------
-// PostgreSQL DbContext
-// --------------------------
+// PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<CacheService>();
-
-// --------------------------
-// Controllers (VIEW yok artık)
-// --------------------------
+// Controllers
 builder.Services.AddControllers();
 
-// --------------------------
-// Swagger (API testi için)
-// --------------------------
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// CORS - DÜZGÜN HALİ
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5174")   // React portu
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();                     // Token geçmesi için ZORUNLU
+    });
+});
 
-// --------------------------
-// JWT Authentication
-// --------------------------
+// JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
@@ -57,27 +55,53 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(key)
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+
+            // 🔥 CRITICAL – Token’daki "role" claim’ini oku
+            RoleClaimType = ClaimTypes.Role
         };
     });
 
-// --------------------------
-// CORS (React & React Native)
-// --------------------------
-builder.Services.AddCors(options =>
+
+// Swagger + JWT Destek
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
 {
-    options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-    );
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "ProjeOgrenciYonetim API",
+        Version = "v1"
+    });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Bearer {token} formatında JWT giriniz"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
 });
 
 var app = builder.Build();
 
-// --------------------------
-// Swagger aktif
-// --------------------------
+// Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -86,15 +110,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowAll");
+// 🔥 CORS BURADA OLMALI
+app.UseCors("AllowReactApp");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// --------------------------
-// ARTIK MVC ROUTE YOK
-// Sadece API endpoint'leri çalışır
-// --------------------------
 app.MapControllers();
 
 app.Run();

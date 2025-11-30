@@ -11,6 +11,8 @@ namespace ProjeOgrenciYonetim.Web.Models
 
         public int ProjectId { get; set; }
         public Project Project { get; set; } = default!;
+        public DateTime ApplyDate { get; set; } = DateTime.UtcNow;
+
 
         public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
     }

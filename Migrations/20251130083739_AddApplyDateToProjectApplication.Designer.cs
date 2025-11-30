@@ -12,8 +12,8 @@ using ProjeOgrenciYonetim.Web.Data;
 namespace ProjeOgrenciYonetim.Web.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251129073846_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251130083739_AddApplyDateToProjectApplication")]
+    partial class AddApplyDateToProjectApplication
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,38 @@ namespace ProjeOgrenciYonetim.Web.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("ProjeOgrenciYonetim.Web.Models.AdminUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
+
+                    b.ToTable("AdminUsers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            PasswordHash = "1234",
+                            UserName = "admin"
+                        });
+                });
 
             modelBuilder.Entity("ProjeOgrenciYonetim.Web.Models.Project", b =>
                 {
@@ -64,6 +96,9 @@ namespace ProjeOgrenciYonetim.Web.Migrations
                     b.Property<DateTime>("AppliedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime>("ApplyDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("ProjectId")
                         .HasColumnType("integer");
 
@@ -100,7 +135,7 @@ namespace ProjeOgrenciYonetim.Web.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Password")
+                    b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
 

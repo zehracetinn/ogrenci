@@ -18,12 +18,15 @@ namespace ProjeOgrenciYonetim.Web.Services
 
         public string CreateStudentToken(Student s)
         {
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, s.Id.ToString()),
-                new Claim("role", "student"),
                 new Claim("studentId", s.Id.ToString()),
-                new Claim("email", s.Email)
+                new Claim("email", s.Email),
+
+                // 🔥 ÖNEMLİ: Hem "role" hem ClaimTypes.Role ekleniyor
+                new Claim("role", "Student"),
+                new Claim(ClaimTypes.Role, "Student")
             };
 
             return CreateToken(claims);
@@ -31,15 +34,22 @@ namespace ProjeOgrenciYonetim.Web.Services
 
         public string CreateAdminToken(AdminUser admin)
         {
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, admin.Id.ToString()),
-                new Claim("role", "admin"),
+
+                // UI için custom
+                new Claim("role", "Admin"),
+
+                // ASP.NET Core için gerçek role claim
+                new Claim(ClaimTypes.Role, "Admin"),
+
                 new Claim("userName", admin.UserName)
             };
 
             return CreateToken(claims);
         }
+
 
         private string CreateToken(IEnumerable<Claim> claims)
         {

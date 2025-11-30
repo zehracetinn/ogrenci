@@ -1,219 +1,157 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjeOgrenciYonetim.Web.Data;
 using ProjeOgrenciYonetim.Web.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using System.Security.Claims;
-using Microsoft.Extensions.Caching.Distributed;
 
-namespace ProjeOgrenciYonetim.Web.Controllers
+namespace ProjeOgrenciYonetim.Web.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ProjectsController : ControllerBase
 {
-    public class ProjectController : Controller
+    private readonly AppDbContext _db;
+
+    public ProjectsController(AppDbContext db)
     {
-        private readonly AppDbContext _db;
-        private readonly IDistributedCache _cache;
+        _db = db;
+    }
 
-        public ProjectController(AppDbContext db, IDistributedCache cache)
-        {
-            _db = db;
-            _cache = cache;
-        }
+    // ============================================================
+    // =====================  ADMIN  ===============================
+    // ============================================================
 
-        private bool IsAdmin()
-        {
-            return User.Claims.Any(c => c.Type == "Role" && c.Value == "Admin");
-        }
+    [HttpGet]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> GetAll()
+    {
+        var list = await _db.Projects.ToListAsync();
+        return Ok(list);
+    }
 
-        // ==================== ADMIN PROJECT LIST =====================
-        public async Task<IActionResult> AdminList()
-        {
-            if (!IsAdmin()) return Forbid();
+    [HttpPost]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Create(Project p)
+    {
+        _db.Projects.Add(p);
+        await _db.SaveChangesAsync();
+        return Ok(p);
+    }
 
-            var projects = await _db.Projects.ToListAsync();
-            return View(projects);
-        }
+    [HttpPut("{id}")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Update(int id, Project p)
+    {
+        var project = await _db.Projects.FindAsync(id);
+        if (project == null) return NotFound();
 
-        // ==================== CREATE =====================
-        [HttpGet]
-        public IActionResult Create()
-        {
-            if (!IsAdmin()) return Forbid();
-            return View();
-        }
+        project.Name = p.Name;
+        project.Description = p.Description;
+        project.DurationWeeks = p.DurationWeeks;
+        project.Technologies = p.Technologies;
 
-        [HttpPost]
-        public async Task<IActionResult> Create(Project p)
-        {
-            if (!IsAdmin()) return Forbid();
+        await _db.SaveChangesAsync();
+        return Ok(project);
+    }
 
-            _db.Projects.Add(p);
-            await _db.SaveChangesAsync();
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var project = await _db.Projects.FindAsync(id);
+        if (project == null) return NotFound();
 
-            // Redis Cache invalidate
-            await _cache.RemoveAsync("projects_all");
+        _db.Projects.Remove(project);
+        await _db.SaveChangesAsync();
+        return Ok("Proje silindi.");
+    }
 
-            return RedirectToAction("AdminList");
-        }
-
-        // ==================== EDIT =====================
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id)
-        {
-            if (!IsAdmin()) return Forbid();
-            var p = await _db.Projects.FindAsync(id);
-            return View(p);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Edit(Project p)
-        {
-            if (!IsAdmin()) return Forbid();
-
-            _db.Projects.Update(p);
-            await _db.SaveChangesAsync();
-
-            // Redis Cache invalidate
-            await _cache.RemoveAsync("projects_all");
-
-            return RedirectToAction("AdminList");
-        }
-
-        // ==================== DELETE =====================
-        [HttpPost]
-        public async Task<IActionResult> Delete(int id)
-        {
-            if (!IsAdmin()) return Forbid();
-
-            var p = await _db.Projects.FindAsync(id);
-            _db.Projects.Remove(p);
-
-            await _db.SaveChangesAsync();
-
-            // Redis Cache invalidate
-            await _cache.RemoveAsync("projects_all");
-
-            return RedirectToAction("AdminList");
-        }
-
-        // ==================== STUDENT PROJECT LIST (REDIS CACHE) =====================
-        public async Task<IActionResult> List()
-        {
-            string cacheKey = "projects_all";
-            List<Project> projects;
-
-            var cacheData = await _cache.GetAsync(cacheKey);
-
-            if (cacheData != null)
+    // Projeye başvuran öğrenciler
+    [HttpGet("{id}/applicants")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Applicants(int id)
+    {
+        var applicants = await _db.ProjectApplications
+            .Where(a => a.ProjectId == id)
+            .Include(a => a.Student)
+            .Select(a => new
             {
-                projects = System.Text.Json.JsonSerializer.Deserialize<List<Project>>(cacheData);
-            }
-            else
-            {
-                projects = await _db.Projects.ToListAsync();
+                a.Student.FullName,
+                a.Student.Email,
+                a.Student.StudentNumber,
+                a.AppliedAt
+            })
+            .ToListAsync();
 
-                var bytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(projects);
+        return Ok(applicants);
+    }
 
-                await _cache.SetAsync(
-                    cacheKey,
-                    bytes,
-                    new DistributedCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-                    }
-                );
-            }
+    // ============================================================
+    // =====================  STUDENT  ============================
+    // ============================================================
 
-            return View(projects);
-        }
+    [HttpGet("list")]
+    [Authorize(Roles = "student")]
+    public async Task<IActionResult> ListForStudents()
+    {
+        var list = await _db.Projects.ToListAsync();
+        return Ok(list);
+    }
 
-        // ==================== APPLY (REDIS MAX 3 + BLOCK REAPPLY) =====================
-        [HttpPost]
-        public async Task<IActionResult> Apply(int projectId)
+    // Öğrenci projeye başvurur
+    [HttpPost("apply")]
+    [Authorize(Roles = "student")]
+    public async Task<IActionResult> Apply(int projectId)
+    {
+        var studentId = int.Parse(User.Claims.First(c => c.Type == "studentId").Value);
+
+        // Aynı projeye tekrar başvurmayı engelle
+        bool alreadyApplied = await _db.ProjectApplications
+            .AnyAsync(x => x.ProjectId == projectId && x.StudentId == studentId);
+
+        if (alreadyApplied)
+            return BadRequest("Bu projeye zaten başvurdunuz.");
+
+        // Max 3 başvuru kontrolü
+        int count = await _db.ProjectApplications
+            .CountAsync(x => x.StudentId == studentId);
+
+        if (count >= 3)
+            return BadRequest("En fazla 3 projeye başvurabilirsiniz.");
+
+        var app = new ProjectApplication
         {
-            var studentIdClaim = User.Claims.FirstOrDefault(c => c.Type == "StudentId");
-            if (studentIdClaim == null) return RedirectToAction("Login", "Student");
+            StudentId = studentId,
+            ProjectId = projectId,
+            AppliedAt = DateTime.UtcNow
+        };
 
-            int studentId = int.Parse(studentIdClaim.Value);
+        _db.ProjectApplications.Add(app);
+        await _db.SaveChangesAsync();
 
-            string countKey = $"student:{studentId}:application_count";
-            string projectKey = $"student:{studentId}:project:{projectId}";
+        return Ok("Başvurunuz alındı.");
+    }
 
-            // REDIS: Başvuru sayısını al
-            int currentCount = 0;
+    // Öğrencinin kendi başvuruları
+    [HttpGet("my")]
+    [Authorize(Roles = "student")]
+    public async Task<IActionResult> MyProjects()
+    {
+        var studentId = int.Parse(User.Claims.First(c => c.Type == "studentId").Value);
 
-            var countBytes = await _cache.GetAsync(countKey);
-            if (countBytes != null)
+        var list = await _db.ProjectApplications
+            .Where(a => a.StudentId == studentId)
+            .Include(a => a.Project)
+            .Select(a => new
             {
-                currentCount = BitConverter.ToInt32(countBytes);
-            }
-            else
-            {
-                currentCount = await _db.ProjectApplications.CountAsync(a => a.StudentId == studentId);
-                await _cache.SetAsync(countKey, BitConverter.GetBytes(currentCount));
-            }
+                a.Project.Name,
+                a.Project.Description,
+                a.Project.DurationWeeks,
+                a.Project.Technologies,
+                a.AppliedAt
+            })
+            .ToListAsync();
 
-            // Max 3 hakkı geçti mi?
-            if (currentCount >= 3)
-            {
-                TempData["Error"] = "En fazla 3 projeye başvurabilirsiniz.";
-                return RedirectToAction("List");
-            }
-
-            // REDIS: Aynı projeye daha önce başvurmuş mu?
-            var existsRedis = await _cache.GetStringAsync(projectKey);
-            if (existsRedis == "1")
-            {
-                TempData["Error"] = "Bu projeye daha önce başvurdunuz.";
-                return RedirectToAction("List");
-            }
-
-            // DB fallback check
-            bool existsDb = await _db.ProjectApplications
-                .AnyAsync(a => a.ProjectId == projectId && a.StudentId == studentId);
-
-            if (existsDb)
-            {
-                await _cache.SetStringAsync(projectKey, "1");
-                TempData["Error"] = "Bu projeye daha önce başvurdunuz.";
-                return RedirectToAction("List");
-            }
-
-            // Başvuru ekle
-            var app = new ProjectApplication
-            {
-                StudentId = studentId,
-                ProjectId = projectId
-            };
-
-            _db.ProjectApplications.Add(app);
-            await _db.SaveChangesAsync();
-
-            // REDIS: başvuru count +1
-            currentCount++;
-            await _cache.SetAsync(countKey, BitConverter.GetBytes(currentCount));
-
-            // REDIS: aynı projeye tekrar başvuramasın
-            await _cache.SetStringAsync(projectKey, "1");
-
-            TempData["Success"] = "Başvurunuz alındı!";
-            return RedirectToAction("List");
-        }
-
-        // ==================== MY PROJECTS =====================
-        public async Task<IActionResult> MyProjects()
-        {
-            var studentIdClaim = User.Claims.FirstOrDefault(c => c.Type == "StudentId");
-            if (studentIdClaim == null) return RedirectToAction("Login", "Student");
-
-            int studentId = int.Parse(studentIdClaim.Value);
-
-            var apps = await _db.ProjectApplications
-                .Include(a => a.Project)
-                .Where(a => a.StudentId == studentId)
-                .ToListAsync();
-
-            return View(apps);
-        }
+        return Ok(list);
     }
 }

@@ -16,7 +16,7 @@ namespace ProjeOgrenciYonetim.Web.Models
         public string Email { get; set; } = default!;
 
         // Şimdilik basit tutuyoruz (ileride gerçek hash’e çeviririz)
-        public string Password { get; set; } = default!;
+        
 
         // "C#, React, SQL" gibi
         public string KnownTechnologies { get; set; } = default!;

@@ -13,6 +13,20 @@ namespace ProjeOgrenciYonetim.Web.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "AdminUsers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserName = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AdminUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Projects",
                 columns: table => new
                 {
@@ -36,6 +50,7 @@ namespace ProjeOgrenciYonetim.Web.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FullName = table.Column<string>(type: "text", nullable: false),
                     StudentNumber = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
                     Password = table.Column<string>(type: "text", nullable: false),
                     KnownTechnologies = table.Column<string>(type: "text", nullable: false),
@@ -73,6 +88,17 @@ namespace ProjeOgrenciYonetim.Web.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "AdminUsers",
+                columns: new[] { "Id", "PasswordHash", "UserName" },
+                values: new object[] { 1, "1234", "admin" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdminUsers_UserName",
+                table: "AdminUsers",
+                column: "UserName",
+                unique: true);
+
             migrationBuilder.CreateIndex(
                 name: "IX_ProjectApplications_ProjectId",
                 table: "ProjectApplications",
@@ -100,6 +126,9 @@ namespace ProjeOgrenciYonetim.Web.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AdminUsers");
+
             migrationBuilder.DropTable(
                 name: "ProjectApplications");
 

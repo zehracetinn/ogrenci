@@ -1,91 +1,72 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
 using ProjeOgrenciYonetim.Web.Data;
 using ProjeOgrenciYonetim.Web.Models;
 
-namespace ProjeOgrenciYonetim.Web.Controllers
+namespace ProjeOgrenciYonetim.Web.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "Student")]
+public class StudentsController : ControllerBase
 {
-    public class StudentController : Controller
+    private readonly AppDbContext _db;
+
+    public StudentsController(AppDbContext db)
     {
-        private readonly AppDbContext _db;
+        _db = db;
+    }
 
-        public StudentController(AppDbContext db)
+    // ================================
+    // GET: api/Students/profile
+    // ================================
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile()
+    {
+        var studentId = int.Parse(User.FindFirst("StudentId")!.Value);
+        var student = await _db.Students.FindAsync(studentId);
+
+        if (student == null)
+            return NotFound();
+
+        return Ok(student);
+    }
+
+    // ================================
+    // POST: api/Students/apply-project
+    // ================================
+    [HttpPost("apply-project")]
+    public async Task<IActionResult> ApplyProject([FromBody] int projectId)
+    {
+        var studentId = int.Parse(User.FindFirst("StudentId")!.Value);
+
+        var application = new ProjectApplication
         {
-            _db = db;
-        }
+            StudentId = studentId,
+            ProjectId = projectId,
+            ApplyDate = DateTime.UtcNow
+        };
 
-        // =================== REGISTER ==========================
-        [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
+        _db.ProjectApplications.Add(application);
+        await _db.SaveChangesAsync();
 
-        [HttpPost]
-        public async Task<IActionResult> Register(Student student)
-        {
-            if (!ModelState.IsValid)
-                return View(student);
+        return Ok("Başvuru alındı.");
+    }
 
-            // Varsayılan durum Pending olacak
-            student.Status = StudentStatus.Pending;
+    // ================================
+    // GET: api/Students/my-projects
+    // ================================
+    [HttpGet("my-projects")]
+    public async Task<IActionResult> MyProjects()
+    {
+        var studentId = int.Parse(User.FindFirst("StudentId")!.Value);
 
-            _db.Students.Add(student);
-            await _db.SaveChangesAsync();
+        var list = await _db.ProjectApplications
+            .Include(p => p.Project)
+            .Where(p => p.StudentId == studentId)
+            .ToListAsync();
 
-            ViewBag.Message = "Kaydınız alındı. Admin onayından sonra giriş yapabileceksiniz.";
-            return View();
-        }
-
-        // ==================== LOGIN ============================
-        [HttpGet]
-        public IActionResult Login()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Login(string email, string password)
-        {
-            var student = await _db.Students
-                .FirstOrDefaultAsync(s => s.Email == email && s.Password == password);
-
-            if (student == null)
-            {
-                ViewBag.Error = "Email veya şifre hatalı";
-                return View();
-            }
-
-            if (student.Status != StudentStatus.Approved)
-            {
-                ViewBag.Error = "Hesabınız admin onayında.";
-                return View();
-            }
-
-            // Cookie Claims
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, student.FullName),
-                new Claim("StudentId", student.Id.ToString()),
-                new Claim("Role", "Student")
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identity));
-
-            return RedirectToAction("Index", "Home");
-        }
-
-        public async Task<IActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync();
-            return RedirectToAction("Login");
-        }
+        return Ok(list);
     }
 }

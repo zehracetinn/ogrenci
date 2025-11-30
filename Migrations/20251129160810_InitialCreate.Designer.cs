@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProjeOgrenciYonetim.Web.Data;
@@ -11,9 +12,11 @@ using ProjeOgrenciYonetim.Web.Data;
 namespace ProjeOgrenciYonetim.Web.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251129160810_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,9 +96,6 @@ namespace ProjeOgrenciYonetim.Web.Migrations
                     b.Property<DateTime>("AppliedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("ApplyDate")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("ProjectId")
                         .HasColumnType("integer");
 
@@ -129,6 +129,10 @@ namespace ProjeOgrenciYonetim.Web.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("KnownTechnologies")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text");
 

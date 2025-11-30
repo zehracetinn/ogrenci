@@ -5,10 +5,10 @@ namespace ProjeOgrenciYonetim.Web.Data
 {
     public class AppDbContext : DbContext
     {
-        public DbSet<Student> Students => Set<Student>();
-        public DbSet<Project> Projects => Set<Project>();
-        public DbSet<ProjectApplication> ProjectApplications => Set<ProjectApplication>();
-        public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+        public DbSet<Student> Students { get; set; }
+        public DbSet<Project> Projects { get; set; }
+        public DbSet<ProjectApplication> ProjectApplications { get; set; }
+        public DbSet<AdminUser> AdminUsers { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
@@ -33,7 +33,7 @@ namespace ProjeOgrenciYonetim.Web.Data
                 .HasIndex(pa => new { pa.StudentId, pa.ProjectId })
                 .IsUnique();
 
-            // Admin user için benzersiz UserName
+            // Admin User
             modelBuilder.Entity<AdminUser>()
                 .HasIndex(a => a.UserName)
                 .IsUnique();
