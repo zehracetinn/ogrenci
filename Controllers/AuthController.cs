@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
             Email = dto.Email,
             StudentNumber = dto.StudentNumber,
             KnownTechnologies = dto.KnownTechnologies,
-            PasswordHash = dto.Password, // Şimdi plain, sonra hash yaparız
+            PasswordHash = dto.Password, // TODO: Hash yapılacak
             Status = StudentStatus.Pending
         };
 

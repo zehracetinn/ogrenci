@@ -24,9 +24,11 @@ namespace ProjeOgrenciYonetim.Web.Services
                 new Claim("studentId", s.Id.ToString()),
                 new Claim("email", s.Email),
 
-                // 🔥 ÖNEMLİ: Hem "role" hem ClaimTypes.Role ekleniyor
-                new Claim("role", "Student"),
-                new Claim(ClaimTypes.Role, "Student")
+                // FRONTEND için role
+                new Claim("role", "student"),
+
+                // BACKEND için role
+                new Claim(ClaimTypes.Role, "student")
             };
 
             return CreateToken(claims);
@@ -38,18 +40,17 @@ namespace ProjeOgrenciYonetim.Web.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, admin.Id.ToString()),
 
-                // UI için custom
-                new Claim("role", "Admin"),
+                // FRONTEND
+                new Claim("role", "admin"),
 
-                // ASP.NET Core için gerçek role claim
-                new Claim(ClaimTypes.Role, "Admin"),
+                // BACKEND
+                new Claim(ClaimTypes.Role, "admin"),
 
                 new Claim("userName", admin.UserName)
             };
 
             return CreateToken(claims);
         }
-
 
         private string CreateToken(IEnumerable<Claim> claims)
         {
@@ -65,7 +66,9 @@ namespace ProjeOgrenciYonetim.Web.Services
                 issuer: jwt["Issuer"],
                 audience: jwt["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(int.Parse(jwt["ExpiresInMinutes"]!)),
+                expires: DateTime.UtcNow.AddMinutes(
+                    int.Parse(jwt["ExpiresInMinutes"]!)
+                ),
                 signingCredentials: creds
             );
 

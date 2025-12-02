@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjeOgrenciYonetim.Web.Data;
@@ -7,6 +8,9 @@ namespace ProjeOgrenciYonetim.Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
+    // 🔥 TÜM METHODLAR SADECE ADMIN TOKEN İLE ÇALIŞIR
+    [Authorize(Roles = "admin")]
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -16,7 +20,7 @@ namespace ProjeOgrenciYonetim.Web.Controllers
             _db = db;
         }
 
-        // ======================= TUM OGRENCILER =============================
+        // ======================= Tüm Öğrenciler =============================
         [HttpGet("students")]
         public async Task<IActionResult> GetAllStudents()
         {
@@ -27,7 +31,7 @@ namespace ProjeOgrenciYonetim.Web.Controllers
             return Ok(students);
         }
 
-        // ======================= ONAY =============================
+        // ======================= Onayla =============================
         [HttpPut("students/{id}/approve")]
         public async Task<IActionResult> Approve(int id)
         {
@@ -40,7 +44,7 @@ namespace ProjeOgrenciYonetim.Web.Controllers
             return Ok(s);
         }
 
-        // ======================= REDDET =============================
+        // ======================= Reddet =============================
         [HttpPut("students/{id}/reject")]
         public async Task<IActionResult> Reject(int id)
         {

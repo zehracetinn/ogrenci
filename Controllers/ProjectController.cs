@@ -66,7 +66,6 @@ public class ProjectsController : ControllerBase
         return Ok("Proje silindi.");
     }
 
-    // Projeye başvuran öğrenciler
     [HttpGet("{id}/applicants")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Applicants(int id)
@@ -98,14 +97,13 @@ public class ProjectsController : ControllerBase
         return Ok(list);
     }
 
-    // Öğrenci projeye başvurur
     [HttpPost("apply")]
     [Authorize(Roles = "student")]
-    public async Task<IActionResult> Apply(int projectId)
+    public async Task<IActionResult> Apply([FromQuery] int projectId)
     {
-        var studentId = int.Parse(User.Claims.First(c => c.Type == "studentId").Value);
+        var studentId = int.Parse(User.FindFirst("studentId")!.Value);
 
-        // Aynı projeye tekrar başvurmayı engelle
+        // Aynı projeye tekrar başvuru engelle
         bool alreadyApplied = await _db.ProjectApplications
             .AnyAsync(x => x.ProjectId == projectId && x.StudentId == studentId);
 
@@ -132,12 +130,11 @@ public class ProjectsController : ControllerBase
         return Ok("Başvurunuz alındı.");
     }
 
-    // Öğrencinin kendi başvuruları
     [HttpGet("my")]
     [Authorize(Roles = "student")]
     public async Task<IActionResult> MyProjects()
     {
-        var studentId = int.Parse(User.Claims.First(c => c.Type == "studentId").Value);
+        var studentId = int.Parse(User.FindFirst("studentId")!.Value);
 
         var list = await _db.ProjectApplications
             .Where(a => a.StudentId == studentId)

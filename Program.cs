@@ -16,6 +16,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = "OgrenciYonetim_";
 });
 
+// Services
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<CacheService>();
 
@@ -26,16 +27,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Controllers
 builder.Services.AddControllers();
 
-// CORS - DÜZGÜN HALİ
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy
-            .WithOrigins("http://localhost:5174")   // React portu
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();                     // Token geçmesi için ZORUNLU
+        policy.WithOrigins("http://localhost:5174")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -57,13 +57,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(key),
 
-            // 🔥 CRITICAL – Token’daki "role" claim’ini oku
-            RoleClaimType = ClaimTypes.Role
+            // ÖNEMLİ
+            RoleClaimType = ClaimTypes.Role,
+
+            // JWT clock skew bug fix (YAPMAZSAN 401 ALIRSIN)
+            ClockSkew = TimeSpan.Zero
         };
     });
 
-
-// Swagger + JWT Destek
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -80,7 +82,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Bearer {token} formatında JWT giriniz"
+        Description = "Bearer {token} formatında yazınız"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -110,7 +112,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// 🔥 CORS BURADA OLMALI
+// CORS
 app.UseCors("AllowReactApp");
 
 app.UseAuthentication();
