@@ -10,42 +10,62 @@ using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Redis
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = "localhost:6379";
-    options.InstanceName = "OgrenciYonetim_";
-});
+// ======================================================================
+// REDIS DEVRE DIŞI (HATA SEBEBİ OYDU)
+// ======================================================================
+// Eğer ileride Redis kullanacaksan geri eklenir.
+// Şu an Redis çalışmadığı için API tamamen çöküyordu → kaldırıldı.
 
-// Services
+// builder.Services.AddStackExchangeRedisCache(...);
+
+// ======================================================================
+// SERVICES
+// ======================================================================
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<CacheService>();
 
-// PostgreSQL
+// CacheService Redis'e bağlı olduğundan kaldırıldı.
+//builder.Services.AddScoped<CacheService>();
+
+// Eğer cache gerekiyorsa memory cache eklenebilir:
+builder.Services.AddDistributedMemoryCache();
+
+// ======================================================================
+// DATABASE
+// ======================================================================
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Controllers
-builder.Services.AddControllers();
+// ======================================================================
+// CONTROLLERS
+// ======================================================================
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+    {
+        // Öğrenci ↔ Başvuru döngüsünü kırmak için
+        opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 
+// ======================================================================
 // CORS
+// ======================================================================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        // KRİTİK DÜZELTME: React uygulamasının çalıştığı her iki porta (5173 ve 5174) da izin veriliyor.
-        policy.WithOrigins("http://localhost:5174", "http://localhost:5173") 
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-// JWT Ayarları
+// ======================================================================
+// JWT
+// ======================================================================
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
-// **Claim mapping temizle → ÇOK ÖNEMLİ**
+// Claim mapping temizle
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -62,15 +82,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(key),
 
-            // === ROL CLAIMİNİ BURADAN OKUYACAK ===
-            RoleClaimType = ClaimTypes.Role,  // backend sadece ClaimTypes.Role dinler
+            RoleClaimType = ClaimTypes.Role,
             NameClaimType = "userName",
 
-            ClockSkew = TimeSpan.Zero // token süresi hatası yaşamamak için
+            ClockSkew = TimeSpan.Zero
         };
     });
 
-// Swagger
+// ======================================================================
+// SWAGGER
+// ======================================================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -108,7 +129,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Swagger dev ortamında aktif
+// ======================================================================
+// MIDDLEWARE
+// ======================================================================
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -117,10 +141,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// CORS → Auth’tan önce olmalı (Sıra doğru ve AllowReactApp politikası uygulanıyor)
 app.UseCors("AllowReactApp");
 
-// Auth
 app.UseAuthentication();
 app.UseAuthorization();
 

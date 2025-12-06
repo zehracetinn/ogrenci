@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace ProjeOgrenciYonetim.Web.Models
 {
@@ -7,25 +8,27 @@ namespace ProjeOgrenciYonetim.Web.Models
         public int Id { get; set; }
 
         public int StudentId { get; set; }
+
+        // ❗ Cycle oluşmasın diye JSON'a gönderilmeyecek
+        [JsonIgnore]
         public Student Student { get; set; } = default!;
 
         public int ProjectId { get; set; }
+
+        // ❗ Project → Applications → Project döngüsü var, JSON'dan çıkar
+        [JsonIgnore]
         public Project Project { get; set; } = default!;
         
         public DateTime ApplyDate { get; set; } = DateTime.UtcNow;
         public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
 
-        // --- EKLENEN KISIM BAŞLANGIÇ ---
-        // Başvuru durumunu tutacak özellik
         public ApplicationStatus Status { get; set; } = ApplicationStatus.Pending;
-        // --- EKLENEN KISIM BİTİŞ ---
     }
 
-    // --- ENUM TANIMI (Dosyanın en altına, class dışına ekliyoruz) ---
     public enum ApplicationStatus
     {
-        Pending = 0,   // Bekliyor
-        Approved = 1,  // Onaylandı
-        Rejected = 2   // Reddedildi
+        Pending = 0,
+        Approved = 1,
+        Rejected = 2
     }
 }
