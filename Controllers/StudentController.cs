@@ -43,31 +43,49 @@ namespace ProjeOgrenciYonetim.Web.Controllers
         // ================================
         // POST: api/student/apply-project
         // ================================
-        [HttpPost("apply-project")]
-        public async Task<IActionResult> ApplyProject([FromBody] ProjectApplyDto dto)
-        {
-            var studentId = int.Parse(User.FindFirst("studentId").Value);
+       [HttpPost("apply-project")]
+public async Task<IActionResult> ApplyProject([FromBody] ProjectApplyDto dto)
+{
+    var studentId = int.Parse(User.FindFirst("studentId").Value);
 
-            // Aynı projeye başvurmuş mu?
-            var exists = await _db.ProjectApplications
-                .AnyAsync(a => a.ProjectId == dto.ProjectId && a.StudentId == studentId);
+    // 1) Öğrencinin profil durumu onaylanmış mı?
+    var student = await _db.Students.FindAsync(studentId);
+    if (student == null)
+        return Unauthorized("Öğrenci bulunamadı.");
 
-            if (exists)
-                return BadRequest("Bu projeye zaten başvurdunuz.");
+    if (student.Status != StudentStatus.Approved)
+        return BadRequest("Hesabınız onaylanmadan proje başvurusu yapamazsınız.");
 
-            var app = new ProjectApplication
-            {
-                StudentId = studentId,
-                ProjectId = dto.ProjectId,
-                ApplyDate = DateTime.UtcNow,
-                Status = ApplicationStatus.Pending
-            };
+    // 2) LIMIT KONTROLÜ (MAX 3)
+    var activeCount = await _db.ProjectApplications
+        .Where(a => a.StudentId == studentId)
+        .CountAsync();
 
-            _db.ProjectApplications.Add(app);
-            await _db.SaveChangesAsync();
+    if (activeCount >= 3)
+        return BadRequest("Aynı anda en fazla 3 projeye başvuru yapabilirsiniz.");
 
-            return Ok("Başvuru gönderildi.");
-        }
+    // 3) Aynı projeye zaten başvurmuş mu?
+    var exists = await _db.ProjectApplications
+        .AnyAsync(a => a.StudentId == studentId && a.ProjectId == dto.ProjectId);
+
+    if (exists)
+        return BadRequest("Bu projeye zaten başvurdunuz.");
+
+    // 4) Başvuruyu kaydet
+    var app = new ProjectApplication
+    {
+        StudentId = studentId,
+        ProjectId = dto.ProjectId,
+        ApplyDate = DateTime.UtcNow,
+        Status = ApplicationStatus.Pending
+    };
+
+    _db.ProjectApplications.Add(app);
+    await _db.SaveChangesAsync();
+
+    return Ok("Başvuru başarıyla gönderildi.");
+}
+
 
         // ================================
         // GET: api/student/applications
@@ -100,6 +118,32 @@ namespace ProjeOgrenciYonetim.Web.Controllers
 
             return Ok(dto);
         }
+
+        // ================================
+// GET: api/Students/my-applications
+// Öğrencinin başvurduğu projelerin ID listesini döner
+// ================================
+[HttpGet("my-applications")]
+[Authorize(Roles = "student")]
+public async Task<IActionResult> GetMyApplicationIds()
+{
+    var studentIdClaim = User.FindFirst("studentId");
+    if (studentIdClaim == null)
+        return Unauthorized();
+
+    int studentId = int.Parse(studentIdClaim.Value);
+
+    var appliedProjectIds = await _db.ProjectApplications
+        .Where(a => a.StudentId == studentId)
+        .Select(a => a.ProjectId)
+        .ToListAsync();
+
+    return Ok(appliedProjectIds);
+}
+
+
+
+        
 
         // ================================
         // GET: api/student/my-projects
