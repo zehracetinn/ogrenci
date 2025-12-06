@@ -8,9 +8,7 @@ namespace ProjeOgrenciYonetim.Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
-    // 🔥 TÜM METHODLAR SADECE ADMIN TOKEN İLE ÇALIŞIR
-    [Authorize(Roles = "admin")]
+    [Authorize(Roles = "admin")] // 🔥 SADECE ADMIN GİRER
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -20,41 +18,51 @@ namespace ProjeOgrenciYonetim.Web.Controllers
             _db = db;
         }
 
-        // ======================= Tüm Öğrenciler =============================
+        // =====================================================================
+        //  TÜM ÖĞRENCİLERİ GETİR
+        // =====================================================================
         [HttpGet("students")]
         public async Task<IActionResult> GetAllStudents()
         {
             var students = await _db.Students
-                .OrderBy(s => s.Status)
-                .ToListAsync();
+                                    .OrderBy(s => s.Status)
+                                    .ToListAsync();
 
             return Ok(students);
         }
 
-        // ======================= Onayla =============================
+        // =====================================================================
+        //  ÖĞRENCİ ONAYLA
+        // =====================================================================
         [HttpPut("students/{id}/approve")]
         public async Task<IActionResult> Approve(int id)
         {
-            var s = await _db.Students.FindAsync(id);
-            if (s == null) return NotFound();
+            var student = await _db.Students.FindAsync(id);
 
-            s.Status = StudentStatus.Approved;
+            if (student == null)
+                return NotFound("Öğrenci bulunamadı.");
+
+            student.Status = StudentStatus.Approved;
             await _db.SaveChangesAsync();
 
-            return Ok(s);
+            return Ok(student);
         }
 
-        // ======================= Reddet =============================
+        // =====================================================================
+        //  ÖĞRENCİ REDDET
+        // =====================================================================
         [HttpPut("students/{id}/reject")]
         public async Task<IActionResult> Reject(int id)
         {
-            var s = await _db.Students.FindAsync(id);
-            if (s == null) return NotFound();
+            var student = await _db.Students.FindAsync(id);
 
-            s.Status = StudentStatus.Rejected;
+            if (student == null)
+                return NotFound("Öğrenci bulunamadı.");
+
+            student.Status = StudentStatus.Rejected;
             await _db.SaveChangesAsync();
 
-            return Ok(s);
+            return Ok(student);
         }
     }
 }

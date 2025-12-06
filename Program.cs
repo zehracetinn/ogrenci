@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ProjeOgrenciYonetim.Web.Services;
 using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,16 +33,20 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5174")
+        // KRİTİK DÜZELTME: React uygulamasının çalıştığı her iki porta (5173 ve 5174) da izin veriliyor.
+        policy.WithOrigins("http://localhost:5174", "http://localhost:5173") 
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-// JWT
+// JWT Ayarları
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+
+// **Claim mapping temizle → ÇOK ÖNEMLİ**
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -57,11 +62,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(key),
 
-            // ÖNEMLİ
-            RoleClaimType = ClaimTypes.Role,
+            // === ROL CLAIMİNİ BURADAN OKUYACAK ===
+            RoleClaimType = ClaimTypes.Role,  // backend sadece ClaimTypes.Role dinler
+            NameClaimType = "userName",
 
-            // JWT clock skew bug fix (YAPMAZSAN 401 ALIRSIN)
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero // token süresi hatası yaşamamak için
         };
     });
 
@@ -103,7 +108,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Swagger
+// Swagger dev ortamında aktif
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -112,9 +117,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// CORS
+// CORS → Auth’tan önce olmalı (Sıra doğru ve AllowReactApp politikası uygulanıyor)
 app.UseCors("AllowReactApp");
 
+// Auth
 app.UseAuthentication();
 app.UseAuthorization();
 

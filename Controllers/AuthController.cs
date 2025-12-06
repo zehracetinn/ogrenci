@@ -84,4 +84,30 @@ public class AuthController : ControllerBase
 
         return Ok(new { token });
     }
+
+
+    // ============================
+    // ADMIN REGISTER (Geçici olarak admin oluşturmak için)
+    // ============================
+    [HttpPost("admin-register")]
+    public async Task<IActionResult> AdminRegister([FromBody] AdminRegisterDto dto) 
+    {
+        // Eğer AdminRegisterDto yoksa, bu parametreyi class içinde tanımlayabilirsin 
+        // ya da mevcut bir DTO kullanabilirsin.
+        
+        if (await _db.AdminUsers.AnyAsync(x => x.Email == dto.Email))
+            return BadRequest("Bu email zaten kayıtlı.");
+
+        var newAdmin = new AdminUser
+        {
+            UserName = dto.UserName,
+            Email = dto.Email, 
+            PasswordHash = dto.Password // Şifreleme yapmıyorsan direkt ata
+        };
+
+        _db.AdminUsers.Add(newAdmin);
+        await _db.SaveChangesAsync();
+
+        return Ok("Admin başarıyla oluşturuldu.");
+    }
 }
