@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ProjeOgrenciYonetim.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8de0b3c65474ef3b04fe832e575bd7af3141e8cd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c1d1d36e09aeb6027bdafcefe750db8ecac0c9c1")]
 [assembly: System.Reflection.AssemblyProductAttribute("ProjeOgrenciYonetim.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ProjeOgrenciYonetim.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
